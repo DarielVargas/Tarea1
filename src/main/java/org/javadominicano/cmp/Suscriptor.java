@@ -9,7 +9,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
  */
 public class Suscriptor {
 
-    public static final String BROKER_URL = "tcp://test.mosquitto.org:1883";
+    public static final String BROKER_URL = "tcp://mqtt.eict.ce.pucmm.edu.do:1883";
     private MqttClient client;
 
     public Suscriptor() {
@@ -33,10 +33,15 @@ public class Suscriptor {
             client.setCallback(new SuscriptorCallback());
             MqttConnectOptions connectOptions = new MqttConnectOptions();
             connectOptions.setAutomaticReconnect(true);
-            connectOptions.setCleanSession(false);  // habilitando la opción de persistencia.
+            connectOptions.setCleanSession(false);
+            connectOptions.setUserName("itt363-grupo1");
+            connectOptions.setPassword("myhZkhrv2m5Y".toCharArray());
+
             client.connect(connectOptions);
-            client.subscribe("/casa/cocina/#"); // Recuperando la información desde la jerarquia superior.
-            client.subscribe("/casa/sala/#");
+            client.subscribe("/itt363-grupo1/estacion-1/sensores/#");
+            client.subscribe("/itt363-grupo1/estacion-2/sensores/#");
+
+
         }
         catch (MqttException e) {
             e.printStackTrace();
