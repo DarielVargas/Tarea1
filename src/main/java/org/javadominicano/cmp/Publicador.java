@@ -4,36 +4,21 @@ import com.google.gson.Gson;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
 
-import java.util.Random;
-
-/**
- * 
- */
 public class Publicador {
-
     private static final String BROKER_URL = "tcp://mqtt.eict.ce.pucmm.edu.do:1883";
     private MqttClient client;
 
-    public Publicador(String id){
-        String clientId = id;
+    public Publicador(String id) {
         try {
-            client = new MqttClient(BROKER_URL, clientId);
-            
+            client = new MqttClient(BROKER_URL, id);
         } catch (MqttException e) {
             e.printStackTrace();
             System.exit(1);
         }
     }
 
-    /**
-     * 
-     * @param topic
-     * @param mensaje
-     */
-    public void enviarMensaje(String topic, String mensaje){
-        System.out.println("Enviando Información Topic: "+ topic);
+    public void enviarMensaje(String topic, String mensaje) {
         try {
             MqttConnectOptions connectOptions = new MqttConnectOptions();
             connectOptions.setAutomaticReconnect(true);
@@ -47,43 +32,48 @@ public class Publicador {
             client.close();
         } catch (MqttException e) {
             e.printStackTrace();
-            System.exit(1);
         }
-        
     }
 
     public static void iniciarPrueba() throws Exception {
-        Thread hilo1 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(true) {
-                    Gson gson = new Gson();
-                    new Publicador("sensora").enviarMensaje("/itt363-grupo1/estacion-1/sensores/datos", gson.toJson(new Sensor("sensora")));
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-        hilo1.start();
+        Gson gson = new Gson();
 
-        Thread hilo2 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(true) {
-                    Gson gson = new Gson();
-                    new Publicador("sensorb").enviarMensaje("/itt363-grupo1/estacion-2/sensores/datos", gson.toJson(new Sensor("sensorb")));
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+        // Velocidad del viento cada 5 segundos
+        new Thread(() -> {
+            while (true) {
+                Sensor s = new Sensor("sensor1", "velocidad");
+                new Publicador("pub-velocidad").enviarMensaje(
+                        "/itt363-grupo1/estacion-1/sensores/velocidad", gson.toJson(s));
+                esperar(5000);
             }
-        });
-        hilo2.start();
+        }).start();
 
+        // Dirección del viento cada 7 segundos
+        new Thread(() -> {
+            while (true) {
+                Sensor s = new Sensor("sensor2", "direccion");
+                new Publicador("pub-direccion").enviarMensaje(
+                        "/itt363-grupo1/estacion-1/sensores/direccion", gson.toJson(s));
+                esperar(7000);
+            }
+        }).start();
+
+        // Probabilidad de lluvia cada 9 segundos
+        new Thread(() -> {
+            while (true) {
+                Sensor s = new Sensor("sensor3", "precipitacion");
+                new Publicador("pub-precipitacion").enviarMensaje(
+                        "/itt363-grupo1/estacion-1/sensores/probabilidad", gson.toJson(s)); // ← topic corregido aquí
+                esperar(9000);
+            }
+        }).start();
+    }
+
+    private static void esperar(int milis) {
+        try {
+            Thread.sleep(milis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
