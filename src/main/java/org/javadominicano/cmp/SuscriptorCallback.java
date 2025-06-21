@@ -9,7 +9,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
-import java.text.Normalizer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -40,11 +39,11 @@ public class SuscriptorCallback implements MqttCallback {
             return;
         }
 
-        System.out.println("JSON parseado → sensorId: " + datos.sensorId + ", valor: " + datos.valor + ", fecha: " + datos.fecha);
+        System.out.println("JSON parseado → sensorId: " + datos.sensorId + ", tipo: " + datos.tipo + ", valor: " + datos.valor + ", fecha: " + datos.fecha);
 
-        // Limpieza profunda de caracteres no visibles y formatos extraños en fecha
+        // Limpieza de caracteres invisibles o malformateados en la fecha
         String fechaAjustada = datos.fecha
-            .replaceAll("[^\\x20-\\x7E]", "") // elimina todo carácter no ASCII visible
+            .replaceAll("[^\\x20-\\x7E]", "")
             .replaceAll("(?i)\\s*p\\.?\\s*m\\.?", " PM")
             .replaceAll("(?i)\\s*a\\.?\\s*m\\.?", " AM")
             .replaceAll("\\s+", " ")
@@ -61,7 +60,7 @@ public class SuscriptorCallback implements MqttCallback {
             return;
         }
 
-        // Detectar tipo de sensor por el topic
+        // Extraer tipo desde el topic
         String[] partes = topic.split("/");
         if (partes.length < 5) {
             System.out.println("Topic no tiene el formato esperado.");
@@ -69,10 +68,6 @@ public class SuscriptorCallback implements MqttCallback {
         }
 
         String tipo = partes[4];
-        // Corregir diferencia entre nombre en topic y base de datos
-        if (tipo.equals("probabilidad")) {
-            tipo = "precipitacion";
-        }
 
         String sql;
         switch (tipo) {
@@ -82,24 +77,30 @@ public class SuscriptorCallback implements MqttCallback {
             case "direccion":
                 sql = "INSERT INTO datos_direccion (sensor_id, direccion, fecha) VALUES (?, ?, ?)";
                 break;
+            case "humedad":
+                sql = "INSERT INTO datos_humedad (sensor_id, humedad, fecha) VALUES (?, ?, ?)";
+                break;
+            case "temperatura":
+                sql = "INSERT INTO datos_temperatura (sensor_id, temperatura, fecha) VALUES (?, ?, ?)";
+                break;
             case "precipitacion":
-                sql = "INSERT INTO datos_precipitacion (sensor_id, probabilidad, fecha) VALUES (?, ?, ?)";
+                sql = "INSERT INTO datos_precipitacion (sensor_id, precipitacion, fecha) VALUES (?, ?, ?)";
                 break;
             default:
                 System.out.println("Tipo de sensor desconocido: " + tipo);
                 return;
         }
 
-        // Insertar en base de datos
         try (Connection conn = DriverManager.getConnection(jdbcUrl, usuario, contrasena)) {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, datos.sensorId);
 
-            // Convertir valor correctamente
             if (tipo.equals("direccion")) {
                 stmt.setString(2, datos.valor.toString());
             } else {
-                stmt.setDouble(2, Double.parseDouble(datos.valor.toString()));
+                // Corregir valores decimales con coma
+                String valorNumerico = datos.valor.toString().replace(",", ".");
+                stmt.setDouble(2, Double.parseDouble(valorNumerico));
             }
 
             stmt.setTimestamp(3, fechaSQL);

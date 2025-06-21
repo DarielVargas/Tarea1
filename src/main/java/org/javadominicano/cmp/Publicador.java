@@ -58,13 +58,33 @@ public class Publicador {
             }
         }).start();
 
-        // Probabilidad de lluvia cada 9 segundos
+        // Humedad cada 6 segundos
         new Thread(() -> {
             while (true) {
-                Sensor s = new Sensor("sensor3", "precipitacion");
+                Sensor s = new Sensor("sensor3", "humedad");
+                new Publicador("pub-humedad").enviarMensaje(
+                        "/itt363-grupo1/estacion-1/sensores/humedad", gson.toJson(s));
+                esperar(6000);
+            }
+        }).start();
+
+        // Temperatura cada 4 segundos
+        new Thread(() -> {
+            while (true) {
+                Sensor s = new Sensor("sensor4", "temperatura");
+                new Publicador("pub-temperatura").enviarMensaje(
+                        "/itt363-grupo1/estacion-1/sensores/temperatura", gson.toJson(s));
+                esperar(4000);
+            }
+        }).start();
+
+        // Precipitación cada 8 segundos
+        new Thread(() -> {
+            while (true) {
+                Sensor s = new Sensor("sensor5", "precipitacion");
                 new Publicador("pub-precipitacion").enviarMensaje(
-                        "/itt363-grupo1/estacion-1/sensores/probabilidad", gson.toJson(s)); // ← topic corregido aquí
-                esperar(9000);
+                        "/itt363-grupo1/estacion-1/sensores/precipitacion", gson.toJson(s));
+                esperar(8000);
             }
         }).start();
     }
