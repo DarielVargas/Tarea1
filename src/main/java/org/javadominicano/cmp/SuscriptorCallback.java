@@ -84,7 +84,9 @@ public class SuscriptorCallback implements MqttCallback {
                 sql = "INSERT INTO datos_temperatura (sensor_id, temperatura, fecha) VALUES (?, ?, ?)";
                 break;
             case "precipitacion":
-                sql = "INSERT INTO datos_precipitacion (sensor_id, precipitacion, fecha) VALUES (?, ?, ?)";
+                // Mantener compatibilidad con la base de datos actual
+                // donde la columna se denomina 'probabilidad'.
+                sql = "INSERT INTO datos_precipitacion (sensor_id, probabilidad, fecha) VALUES (?, ?, ?)";
                 break;
             default:
                 System.out.println("Tipo de sensor desconocido: " + tipo);
