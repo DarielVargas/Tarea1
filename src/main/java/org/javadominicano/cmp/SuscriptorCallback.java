@@ -60,33 +60,34 @@ public class SuscriptorCallback implements MqttCallback {
             return;
         }
 
-        // Extraer tipo desde el topic
+        // Extraer estación y tipo desde el topic
         String[] partes = topic.split("/");
         if (partes.length < 5) {
             System.out.println("Topic no tiene el formato esperado.");
             return;
         }
 
+        String estacionId = partes[2];
         String tipo = partes[4];
 
         String sql;
         switch (tipo) {
             case "velocidad":
-                sql = "INSERT INTO datos_velocidad (sensor_id, velocidad, fecha) VALUES (?, ?, ?)";
+                sql = "INSERT INTO datos_velocidad (estacion_id, sensor_id, velocidad, fecha) VALUES (?, ?, ?, ?)";
                 break;
             case "direccion":
-                sql = "INSERT INTO datos_direccion (sensor_id, direccion, fecha) VALUES (?, ?, ?)";
+                sql = "INSERT INTO datos_direccion (estacion_id, sensor_id, direccion, fecha) VALUES (?, ?, ?, ?)";
                 break;
             case "humedad":
-                sql = "INSERT INTO datos_humedad (sensor_id, humedad, fecha) VALUES (?, ?, ?)";
+                sql = "INSERT INTO datos_humedad (estacion_id, sensor_id, humedad, fecha) VALUES (?, ?, ?, ?)";
                 break;
             case "temperatura":
-                sql = "INSERT INTO datos_temperatura (sensor_id, temperatura, fecha) VALUES (?, ?, ?)";
+                sql = "INSERT INTO datos_temperatura (estacion_id, sensor_id, temperatura, fecha) VALUES (?, ?, ?, ?)";
                 break;
             case "precipitacion":
                 // Mantener compatibilidad con la base de datos actual
                 // donde la columna se denomina 'probabilidad'.
-                sql = "INSERT INTO datos_precipitacion (sensor_id, probabilidad, fecha) VALUES (?, ?, ?)";
+                sql = "INSERT INTO datos_precipitacion (estacion_id, sensor_id, probabilidad, fecha) VALUES (?, ?, ?, ?)";
                 break;
             default:
                 System.out.println("Tipo de sensor desconocido: " + tipo);
@@ -95,17 +96,18 @@ public class SuscriptorCallback implements MqttCallback {
 
         try (Connection conn = DriverManager.getConnection(jdbcUrl, usuario, contrasena)) {
             PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setString(1, datos.sensorId);
+            stmt.setString(1, estacionId);
+            stmt.setString(2, datos.sensorId);
 
             if (tipo.equals("direccion")) {
-                stmt.setString(2, datos.valor.toString());
+                stmt.setString(3, datos.valor.toString());
             } else {
                 // Corregir valores decimales con coma
                 String valorNumerico = datos.valor.toString().replace(",", ".");
-                stmt.setDouble(2, Double.parseDouble(valorNumerico));
+                stmt.setDouble(3, Double.parseDouble(valorNumerico));
             }
 
-            stmt.setTimestamp(3, fechaSQL);
+            stmt.setTimestamp(4, fechaSQL);
             stmt.executeUpdate();
 
             System.out.println("Insert exitoso en tabla [" + tipo + "] con: " + datos.sensorId + ", " + datos.valor + ", " + fechaSQL);
