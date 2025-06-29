@@ -15,6 +15,10 @@ import java.util.Locale;
 
 public class SuscriptorCallback implements MqttCallback {
 
+    private static final String JDBC_URL = "jdbc:mariadb://192.168.100.166:3306/estacion_mqtt";
+    private static final String DB_USER = "mqttuser";
+    private static final String DB_PASS = "claveMQTT123";
+
     @Override
     public void connectionLost(Throwable cause) {
         System.out.println("Conexión Perdida...");
@@ -24,10 +28,6 @@ public class SuscriptorCallback implements MqttCallback {
     public void messageArrived(String topic, MqttMessage message) throws Exception {
         System.out.println("\nMensaje recibido desde topic: " + topic);
         System.out.println("Contenido crudo: " + message);
-
-        String jdbcUrl = "jdbc:mariadb://192.168.100.166:3306/estacion_mqtt";
-        String usuario = "mqttuser";
-        String contrasena = "claveMQTT123";
 
         Gson gson = new Gson();
         SensorData datos;
@@ -60,57 +60,78 @@ public class SuscriptorCallback implements MqttCallback {
             return;
         }
 
-        // Extraer tipo desde el topic
+        // Extraer tipo y estación desde el topic
         String[] partes = topic.split("/");
         if (partes.length < 5) {
             System.out.println("Topic no tiene el formato esperado.");
             return;
         }
 
+        String estacionId = partes[2];
+        guardarEstacion(estacionId);
+
         String tipo = partes[4];
 
         String sql;
         switch (tipo) {
             case "velocidad":
-                sql = "INSERT INTO datos_velocidad (sensor_id, velocidad, fecha) VALUES (?, ?, ?)";
+                sql = "INSERT INTO datos_velocidad (sensor_id, estacion_id, velocidad, fecha) VALUES (?, ?, ?, ?)";
                 break;
             case "direccion":
-                sql = "INSERT INTO datos_direccion (sensor_id, direccion, fecha) VALUES (?, ?, ?)";
+                sql = "INSERT INTO datos_direccion (sensor_id, estacion_id, direccion, fecha) VALUES (?, ?, ?, ?)";
                 break;
             case "humedad":
-                sql = "INSERT INTO datos_humedad (sensor_id, humedad, fecha) VALUES (?, ?, ?)";
+                sql = "INSERT INTO datos_humedad (sensor_id, estacion_id, humedad, fecha) VALUES (?, ?, ?, ?)";
                 break;
             case "temperatura":
-                sql = "INSERT INTO datos_temperatura (sensor_id, temperatura, fecha) VALUES (?, ?, ?)";
+                sql = "INSERT INTO datos_temperatura (sensor_id, estacion_id, temperatura, fecha) VALUES (?, ?, ?, ?)";
                 break;
             case "precipitacion":
-                // Mantener compatibilidad con la base de datos actual
-                // donde la columna se denomina 'probabilidad'.
-                sql = "INSERT INTO datos_precipitacion (sensor_id, probabilidad, fecha) VALUES (?, ?, ?)";
+                sql = "INSERT INTO datos_precipitacion (sensor_id, estacion_id, probabilidad, fecha) VALUES (?, ?, ?, ?)";
                 break;
             default:
                 System.out.println("Tipo de sensor desconocido: " + tipo);
                 return;
         }
 
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, usuario, contrasena)) {
+        try (Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS)) {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, datos.sensorId);
+            stmt.setString(2, estacionId);
 
             if (tipo.equals("direccion")) {
-                stmt.setString(2, datos.valor.toString());
+                stmt.setString(3, datos.valor.toString());
             } else {
-                // Corregir valores decimales con coma
                 String valorNumerico = datos.valor.toString().replace(",", ".");
-                stmt.setDouble(2, Double.parseDouble(valorNumerico));
+                stmt.setDouble(3, Double.parseDouble(valorNumerico));
             }
 
-            stmt.setTimestamp(3, fechaSQL);
+            stmt.setTimestamp(4, fechaSQL);
             stmt.executeUpdate();
 
             System.out.println("Insert exitoso en tabla [" + tipo + "] con: " + datos.sensorId + ", " + datos.valor + ", " + fechaSQL);
         } catch (Exception e) {
             System.out.println("Error al insertar en la tabla [" + tipo + "]");
+            e.printStackTrace();
+        }
+    }
+
+    private void guardarEstacion(String estacionId) {
+        String nombre = "Estacion " + estacionId.replace("estacion-", "");
+        String ubicacion = "Desconocida";
+
+        String sql = "INSERT INTO estaciones (id, nombre, ubicacion) VALUES (?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), ubicacion=VALUES(ubicacion)";
+
+        try (Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS)) {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, estacionId);
+            stmt.setString(2, nombre);
+            stmt.setString(3, ubicacion);
+            stmt.executeUpdate();
+            System.out.println("✅ Inserción de estación realizada correctamente.");
+        } catch (Exception e) {
+            System.out.println("Error al guardar estación: " + estacionId);
             e.printStackTrace();
         }
     }
