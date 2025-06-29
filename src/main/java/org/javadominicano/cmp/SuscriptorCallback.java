@@ -15,6 +15,10 @@ import java.util.Locale;
 
 public class SuscriptorCallback implements MqttCallback {
 
+    private static final String JDBC_URL = "jdbc:mariadb://192.168.100.166:3306/estacion_mqtt";
+    private static final String DB_USER = "mqttuser";
+    private static final String DB_PASS = "claveMQTT123";
+
     @Override
     public void connectionLost(Throwable cause) {
         System.out.println("Conexión Perdida...");
@@ -25,9 +29,6 @@ public class SuscriptorCallback implements MqttCallback {
         System.out.println("\nMensaje recibido desde topic: " + topic);
         System.out.println("Contenido crudo: " + message);
 
-        String jdbcUrl = "jdbc:mariadb://192.168.100.166:3306/estacion_mqtt";
-        String usuario = "mqttuser";
-        String contrasena = "claveMQTT123";
 
         Gson gson = new Gson();
         SensorData datos;
@@ -60,12 +61,15 @@ public class SuscriptorCallback implements MqttCallback {
             return;
         }
 
-        // Extraer tipo desde el topic
+        // Extraer tipo y estación desde el topic
         String[] partes = topic.split("/");
         if (partes.length < 5) {
             System.out.println("Topic no tiene el formato esperado.");
             return;
         }
+
+        String estacionId = partes[2];
+        guardarEstacion(estacionId);
 
         String tipo = partes[4];
 
@@ -93,7 +97,7 @@ public class SuscriptorCallback implements MqttCallback {
                 return;
         }
 
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, usuario, contrasena)) {
+        try (Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS)) {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, datos.sensorId);
 
@@ -111,6 +115,25 @@ public class SuscriptorCallback implements MqttCallback {
             System.out.println("Insert exitoso en tabla [" + tipo + "] con: " + datos.sensorId + ", " + datos.valor + ", " + fechaSQL);
         } catch (Exception e) {
             System.out.println("Error al insertar en la tabla [" + tipo + "]");
+            e.printStackTrace();
+        }
+    }
+
+    private void guardarEstacion(String estacionId) {
+        String nombre = "Estacion " + estacionId.replace("estacion-", "");
+        String ubicacion = "Desconocida";
+
+        String sql = "INSERT INTO estaciones (id, nombre, ubicacion) VALUES (?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), ubicacion=VALUES(ubicacion)";
+
+        try (Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS)) {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, estacionId);
+            stmt.setString(2, nombre);
+            stmt.setString(3, ubicacion);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Error al guardar estación: " + estacionId);
             e.printStackTrace();
         }
     }
