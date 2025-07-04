@@ -5,12 +5,10 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 
 public class Main {
     public static void main(String[] args) {
-        // 👉 Esto inicia los hilos de publicación
-        try {
-            Publicador.iniciarPrueba();  // << LÍNEA QUE FALTABA
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // 👉 La simulación de sensores se ha deshabilitado para usar los datos
+        //    provenientes de sensores reales que llegan vía MQTT.  Si en el
+        //    futuro se requiere volver a simular, se puede volver a invocar el
+        //    método `Publicador.iniciarPrueba()` aquí.
 
         String broker = "tcp://mqtt.eict.ce.pucmm.edu.do:1883";
         String usuario = "itt363-grupo1";
