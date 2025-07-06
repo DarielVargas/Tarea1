@@ -1,8 +1,9 @@
 ## Proyecto Demo MQTT
 
-Demostración sobre el uso MQTT utilizando Java, 
-creando Publicadores y Subcriptores mediante el servidor externo de
-Mosquitto.
+Aplicación en Java que se suscribe a un broker MQTT y almacena en una base de
+datos las mediciones enviadas desde un sensor BM280 conectado a un ESP32.
+Anteriormente esta aplicación generaba datos simulados, pero ahora únicamente
+consume los valores recibidos.
 
 ### Ejecutar directamente desde los fuentes
 
