@@ -72,6 +72,11 @@ public class SuscriptorCallback implements MqttCallback {
 
         String tipo = partes[4];
 
+        // Si el tipo es "presion", lo tratamos como "precipitacion"
+        if (tipo.equals("presion")) {
+            tipo = "precipitacion";
+        }
+
         String sql;
         switch (tipo) {
             case "velocidad":

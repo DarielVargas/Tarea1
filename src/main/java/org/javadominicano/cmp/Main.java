@@ -5,12 +5,12 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 
 public class Main {
     public static void main(String[] args) {
-        // 👉 Esto inicia los hilos de publicación
-        try {
-            Publicador.iniciarPrueba();  // << LÍNEA QUE FALTABA
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // 🚫 Quitamos el simulador
+        // try {
+        //     Publicador.iniciarPrueba();
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
 
         String broker = "tcp://mqtt.eict.ce.pucmm.edu.do:1883";
         String usuario = "itt363-grupo1";
@@ -22,11 +22,19 @@ public class Main {
             options.setUserName(usuario);
             options.setPassword(contrasena.toCharArray());
 
-            client.setCallback(new SuscriptorCallback()); // Usamos 1 sola clase para todo
+            client.setCallback(new SuscriptorCallback());
             client.connect(options);
 
-            // Escuchar todos los sensores
-            client.subscribe("/itt363-grupo1/estacion-1/sensores/#");
+            // Suscribimos cada topic individualmente
+            //client.subscribe("/itt363-grupo1/estacion-1/sensores/probabilidad");
+            client.subscribe("/itt363-grupo1/estacion-1/sensores/temperatura");
+            client.subscribe("/itt363-grupo1/estacion-1/sensores/presion");
+            client.subscribe("/itt363-grupo1/estacion-1/sensores/humedad");
+            client.subscribe("/itt363-grupo1/estacion-1/sensores/precipitacion");
+            //client.subscribe("/itt363-grupo1/estacion-1/sensores/datos");
+            //client.subscribe("/itt363-grupo1/estacion-2/sensores/datos");
+            client.subscribe("/itt363-grupo1/estacion-1/sensores/velocidad");
+            client.subscribe("/itt363-grupo1/estacion-1/sensores/direccion");
 
             System.out.println("✅ Suscriptor activo. Esperando datos...");
         } catch (Exception e) {
