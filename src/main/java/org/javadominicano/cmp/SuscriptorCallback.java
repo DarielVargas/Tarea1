@@ -72,11 +72,6 @@ public class SuscriptorCallback implements MqttCallback {
 
         String tipo = partes[4];
 
-        // Si el tipo es "presion", lo tratamos como "precipitacion"
-        if (tipo.equals("presion")) {
-            tipo = "precipitacion";
-        }
-
         String sql;
         switch (tipo) {
             case "velocidad":
@@ -93,6 +88,12 @@ public class SuscriptorCallback implements MqttCallback {
                 break;
             case "precipitacion":
                 sql = "INSERT INTO datos_precipitacion (sensor_id, estacion_id, probabilidad, fecha) VALUES (?, ?, ?, ?)";
+                break;
+            case "presion":
+                sql = "INSERT INTO datos_presion (sensor_id, estacion_id, valor, fecha) VALUES (?, ?, ?, ?)";
+                break;
+            case "humedad_suelo":
+                sql = "INSERT INTO datos_humedad_suelo (sensor_id, estacion_id, valor, fecha) VALUES (?, ?, ?, ?)";
                 break;
             default:
                 System.out.println("Tipo de sensor desconocido: " + tipo);
