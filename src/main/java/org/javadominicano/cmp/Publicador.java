@@ -87,6 +87,26 @@ public class Publicador {
                 esperar(8000);
             }
         }).start();
+
+        // Presión atmosférica cada 9 segundos
+        new Thread(() -> {
+            while (true) {
+                Sensor s = new Sensor("sensor6", "presion");
+                new Publicador("pub-presion").enviarMensaje(
+                        "/itt363-grupo1/estacion-1/sensores/presion", gson.toJson(s));
+                esperar(9000);
+            }
+        }).start();
+
+        // Humedad del suelo cada 10 segundos
+        new Thread(() -> {
+            while (true) {
+                Sensor s = new Sensor("sensor7", "humedad_suelo");
+                new Publicador("pub-humedad-suelo").enviarMensaje(
+                        "/itt363-grupo1/estacion-1/sensores/humedad_suelo", gson.toJson(s));
+                esperar(10000);
+            }
+        }).start();
     }
 
     private static void esperar(int milis) {

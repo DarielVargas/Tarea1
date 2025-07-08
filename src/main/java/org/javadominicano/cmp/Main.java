@@ -29,6 +29,7 @@ public class Main {
             client.subscribe("/itt363-grupo1/estacion-1/sensores/temperatura");
             client.subscribe("/itt363-grupo1/estacion-1/sensores/presion");
             client.subscribe("/itt363-grupo1/estacion-1/sensores/humedad");
+            client.subscribe("/itt363-grupo1/estacion-1/sensores/humedad_suelo");
             client.subscribe("/itt363-grupo1/estacion-1/sensores/precipitacion");
             //client.subscribe("/itt363-grupo1/estacion-1/sensores/datos");
             //client.subscribe("/itt363-grupo1/estacion-2/sensores/datos");
