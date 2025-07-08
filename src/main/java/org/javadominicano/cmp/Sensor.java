@@ -6,7 +6,8 @@ import java.util.Random;
 
 public class Sensor {
     private String sensorId;
-    private String tipo;  // velocidad, direccion, humedad, temperatura o precipitacion
+    // velocidad, direccion, humedad, temperatura, precipitacion, presion y humedad_suelo
+    private String tipo;
     private String valor;
     private String fecha;
 
@@ -27,6 +28,10 @@ public class Sensor {
                 this.valor = String.format("%.2f", 15 + random.nextDouble() * 25); break;
             case "precipitacion":
                 this.valor = String.format("%.2f", random.nextDouble() * 50); break;
+            case "presion":
+                this.valor = String.format("%.2f", 990 + random.nextDouble() * 40); break;
+            case "humedad_suelo":
+                this.valor = String.format("%.2f", random.nextDouble() * 100); break;
             default:
                 this.valor = "0";
         }
