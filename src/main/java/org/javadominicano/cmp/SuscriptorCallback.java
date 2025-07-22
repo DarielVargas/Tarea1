@@ -8,10 +8,8 @@ import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
 public class SuscriptorCallback implements MqttCallback {
 
@@ -41,12 +39,12 @@ public class SuscriptorCallback implements MqttCallback {
 
         System.out.println("JSON parseado → sensorId: " + datos.sensorId + ", tipo: " + datos.tipo + ", valor: " + datos.valor + ", fecha: " + datos.fecha);
 
-        // Conversión directa de la fecha recibida al formato estándar
-        Timestamp fechaSQL;
+        // Validar y formatear la fecha recibida
+        String fechaFormateada;
         try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             Date parsedDate = dateFormat.parse(datos.fecha.trim());
-            fechaSQL = new Timestamp(parsedDate.getTime());
+            fechaFormateada = dateFormat.format(parsedDate);
         } catch (Exception e) {
             System.out.println("Error al convertir fecha recibida: " + datos.fecha);
             e.printStackTrace();
@@ -105,10 +103,10 @@ public class SuscriptorCallback implements MqttCallback {
                 stmt.setDouble(3, Double.parseDouble(valorNumerico));
             }
 
-            stmt.setTimestamp(4, fechaSQL);
+            stmt.setString(4, fechaFormateada);
             stmt.executeUpdate();
 
-            System.out.println("Insert exitoso en tabla [" + tipo + "] con: " + datos.sensorId + ", " + datos.valor + ", " + fechaSQL);
+            System.out.println("Insert exitoso en tabla [" + tipo + "] con: " + datos.sensorId + ", " + datos.valor + ", " + fechaFormateada);
         } catch (Exception e) {
             System.out.println("Error al insertar en la tabla [" + tipo + "]");
             e.printStackTrace();
