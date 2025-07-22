@@ -41,21 +41,14 @@ public class SuscriptorCallback implements MqttCallback {
 
         System.out.println("JSON parseado → sensorId: " + datos.sensorId + ", tipo: " + datos.tipo + ", valor: " + datos.valor + ", fecha: " + datos.fecha);
 
-        // Limpieza de caracteres invisibles o malformateados en la fecha
-        String fechaAjustada = datos.fecha
-            .replaceAll("[^\\x20-\\x7E]", "")
-            .replaceAll("(?i)\\s*p\\.?\\s*m\\.?", " PM")
-            .replaceAll("(?i)\\s*a\\.?\\s*m\\.?", " AM")
-            .replaceAll("\\s+", " ")
-            .trim();
-
+        // Conversión directa de la fecha recibida al formato estándar
         Timestamp fechaSQL;
         try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy, h:mm:ss a", Locale.ENGLISH);
-            Date parsedDate = dateFormat.parse(fechaAjustada);
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date parsedDate = dateFormat.parse(datos.fecha.trim());
             fechaSQL = new Timestamp(parsedDate.getTime());
         } catch (Exception e) {
-            System.out.println("Error al convertir fecha ajustada: " + fechaAjustada);
+            System.out.println("Error al convertir fecha recibida: " + datos.fecha);
             e.printStackTrace();
             return;
         }
