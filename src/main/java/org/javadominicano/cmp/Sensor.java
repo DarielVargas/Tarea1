@@ -36,7 +36,7 @@ public class Sensor {
                 this.valor = "0";
         }
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy, h:mm:ssa");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         this.fecha = sdf.format(new Date());
     }
 
