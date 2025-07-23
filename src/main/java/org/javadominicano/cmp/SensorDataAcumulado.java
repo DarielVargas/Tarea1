@@ -54,6 +54,8 @@ public class SensorDataAcumulado {
     }
 
     // ✅ Genera el JSON con el formato exacto requerido por el API
+    //    Incluye todos los sensores disponibles cuando el conjunto de datos
+    //    está completo.
     public String toJsonApi() {
         JsonObject json = new JsonObject();
         json.addProperty("grupo", "1");
@@ -67,6 +69,11 @@ public class SensorDataAcumulado {
         json.addProperty("fecha", fecha);
         json.addProperty("temperatura", temperatura);
         json.addProperty("humedad", humedad);
+        json.addProperty("presion", presion);
+        json.addProperty("velocidad", velocidad);
+        json.addProperty("direccion", direccion);
+        json.addProperty("precipitacion", precipitacion);
+        json.addProperty("humedad_suelo", humedad_suelo);
         return json.toString();
     }
 
