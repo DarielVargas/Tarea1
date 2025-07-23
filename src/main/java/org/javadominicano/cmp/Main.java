@@ -5,11 +5,11 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 
 public class Main {
     public static void main(String[] args) {
-      // try {
-        //    Publicador.iniciarPrueba();
-        //} catch (Exception e) {
-         //   e.printStackTrace();
-        //}
+       try {
+           Publicador.iniciarPrueba();
+       } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         String broker = "tcp://mqtt.eict.ce.pucmm.edu.do:1883";
         String usuario = "itt363-grupo1";
