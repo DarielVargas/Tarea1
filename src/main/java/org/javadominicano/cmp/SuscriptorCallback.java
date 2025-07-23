@@ -11,13 +11,14 @@ import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
 public class SuscriptorCallback implements MqttCallback {
 
     private static final String JDBC_URL = "jdbc:mariadb://192.168.100.166:3306/estacion_mqtt";
     private static final String DB_USER = "mqttuser";
     private static final String DB_PASS = "claveMQTT123";
+
+    private final SensorDataAcumulado acumulado = new SensorDataAcumulado();
 
     @Override
     public void connectionLost(Throwable cause) {
@@ -41,8 +42,7 @@ public class SuscriptorCallback implements MqttCallback {
 
         System.out.println("JSON parseado → sensorId: " + datos.sensorId + ", tipo: " + datos.tipo + ", valor: " + datos.valor + ", fecha: " + datos.fecha);
 
-        // Conversión de la fecha recibida al formato estándar (dd/MM/yyyy HH:mm:ss)
-        // para posteriormente almacenarla como Timestamp en la base de datos
+        // Convertir la fecha a Timestamp
         Timestamp fechaSQL;
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
@@ -66,33 +66,51 @@ public class SuscriptorCallback implements MqttCallback {
 
         String tipo = partes[4];
 
+        // Insertar en base de datos
         String sql;
         switch (tipo) {
             case "velocidad":
                 sql = "INSERT INTO datos_velocidad (sensor_id, estacion_id, velocidad, fecha) VALUES (?, ?, ?, ?)";
+                acumulado.setVelocidad(parseDouble(datos.valor));
+                acumulado.sensor_velocidad = datos.sensorId;
                 break;
             case "direccion":
                 sql = "INSERT INTO datos_direccion (sensor_id, estacion_id, direccion, fecha) VALUES (?, ?, ?, ?)";
+                acumulado.setDireccion(datos.valor.toString());
+                acumulado.sensor_direccion = datos.sensorId;
                 break;
             case "humedad":
                 sql = "INSERT INTO datos_humedad (sensor_id, estacion_id, humedad, fecha) VALUES (?, ?, ?, ?)";
+                acumulado.setHumedad(parseDouble(datos.valor));
+                acumulado.sensor_humedad = datos.sensorId;
                 break;
             case "temperatura":
                 sql = "INSERT INTO datos_temperatura (sensor_id, estacion_id, temperatura, fecha) VALUES (?, ?, ?, ?)";
+                acumulado.setTemperatura(parseDouble(datos.valor));
+                acumulado.sensor_temperatura = datos.sensorId;
                 break;
             case "precipitacion":
                 sql = "INSERT INTO datos_precipitacion (sensor_id, estacion_id, probabilidad, fecha) VALUES (?, ?, ?, ?)";
+                acumulado.setPrecipitacion(parseDouble(datos.valor));
+                acumulado.sensor_precipitacion = datos.sensorId;
                 break;
             case "presion":
                 sql = "INSERT INTO datos_presion (sensor_id, estacion_id, valor, fecha) VALUES (?, ?, ?, ?)";
+                acumulado.setPresion(parseDouble(datos.valor));
+                acumulado.sensor_presion = datos.sensorId;
                 break;
             case "humedad_suelo":
                 sql = "INSERT INTO datos_humedad_suelo (sensor_id, estacion_id, valor, fecha) VALUES (?, ?, ?, ?)";
+                acumulado.setHumedadSuelo(parseDouble(datos.valor));
+                acumulado.sensor_humedad_suelo = datos.sensorId;
                 break;
             default:
                 System.out.println("Tipo de sensor desconocido: " + tipo);
                 return;
         }
+
+        acumulado.setFecha(datos.fecha);
+        acumulado.setEstacionId(estacionId);
 
         try (Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS)) {
             PreparedStatement stmt = conn.prepareStatement(sql);
@@ -102,8 +120,7 @@ public class SuscriptorCallback implements MqttCallback {
             if (tipo.equals("direccion")) {
                 stmt.setString(3, datos.valor.toString());
             } else {
-                String valorNumerico = datos.valor.toString().replace(",", ".");
-                stmt.setDouble(3, Double.parseDouble(valorNumerico));
+                stmt.setDouble(3, parseDouble(datos.valor));
             }
 
             stmt.setTimestamp(4, fechaSQL);
@@ -114,6 +131,18 @@ public class SuscriptorCallback implements MqttCallback {
             System.out.println("Error al insertar en la tabla [" + tipo + "]");
             e.printStackTrace();
         }
+
+        // Enviar al API solo si está completo
+        if (acumulado.estaCompleto()) {
+            String jsonApi = acumulado.toJsonApi();  // Solo campos requeridos
+            System.out.println("🌐 JSON a enviar al API: " + jsonApi);
+            ApiClient.enviarDatos(jsonApi);
+            acumulado.reiniciar();
+        }
+    }
+
+    private double parseDouble(Object valor) {
+        return Double.parseDouble(valor.toString().replace(",", "."));
     }
 
     private void guardarEstacion(String estacionId) {
