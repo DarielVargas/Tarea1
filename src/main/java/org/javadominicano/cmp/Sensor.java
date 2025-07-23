@@ -36,7 +36,10 @@ public class Sensor {
                 this.valor = "0";
         }
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        // El formato de fecha enviado por los sensores fue modificado a
+        // dd/MM/yyyy HH:mm:ss. Generamos la fecha utilizando dicho formato
+        // para mantener consistencia con la información recibida.
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         this.fecha = sdf.format(new Date());
     }
 

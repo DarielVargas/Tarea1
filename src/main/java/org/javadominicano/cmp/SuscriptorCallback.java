@@ -41,10 +41,11 @@ public class SuscriptorCallback implements MqttCallback {
 
         System.out.println("JSON parseado → sensorId: " + datos.sensorId + ", tipo: " + datos.tipo + ", valor: " + datos.valor + ", fecha: " + datos.fecha);
 
-        // Conversión directa de la fecha recibida al formato estándar
+        // Conversión de la fecha recibida al formato estándar (dd/MM/yyyy HH:mm:ss)
+        // para posteriormente almacenarla como Timestamp en la base de datos
         Timestamp fechaSQL;
         try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             Date parsedDate = dateFormat.parse(datos.fecha.trim());
             fechaSQL = new Timestamp(parsedDate.getTime());
         } catch (Exception e) {
