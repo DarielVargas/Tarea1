@@ -42,12 +42,16 @@ public class SuscriptorCallback implements MqttCallback {
 
         System.out.println("JSON parseado → sensorId: " + datos.sensorId + ", tipo: " + datos.tipo + ", valor: " + datos.valor + ", fecha: " + datos.fecha);
 
-        // Convertir la fecha a Timestamp
+        // Convertir la fecha a Timestamp para MariaDB y a String para API
         Timestamp fechaSQL;
+        String fechaApi;
         try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            Date parsedDate = dateFormat.parse(datos.fecha.trim());
+            SimpleDateFormat formatoEntrada = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            Date parsedDate = formatoEntrada.parse(datos.fecha.trim());
             fechaSQL = new Timestamp(parsedDate.getTime());
+
+            SimpleDateFormat formatoApi = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            fechaApi = formatoApi.format(parsedDate);
         } catch (Exception e) {
             System.out.println("Error al convertir fecha recibida: " + datos.fecha);
             e.printStackTrace();
@@ -109,7 +113,7 @@ public class SuscriptorCallback implements MqttCallback {
                 return;
         }
 
-        acumulado.setFecha(datos.fecha);
+        acumulado.setFecha(fechaApi); // ← Ya limpia para el API
         acumulado.setEstacionId(estacionId);
 
         try (Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS)) {
@@ -134,7 +138,7 @@ public class SuscriptorCallback implements MqttCallback {
 
         // Enviar al API solo si está completo
         if (acumulado.estaCompleto()) {
-            String jsonApi = acumulado.toJsonApi();  // Solo campos requeridos
+            String jsonApi = acumulado.toJsonApi();  // Solo temperatura y humedad por ahora
             System.out.println("🌐 JSON a enviar al API: " + jsonApi);
             ApiClient.enviarDatos(jsonApi);
             acumulado.reiniciar();

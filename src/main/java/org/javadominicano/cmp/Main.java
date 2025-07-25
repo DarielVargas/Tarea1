@@ -9,7 +9,7 @@ public class Main {
            Publicador.iniciarPrueba();
        } catch (Exception e) {
             e.printStackTrace();
-        }
+      }
 
         String broker = "tcp://mqtt.eict.ce.pucmm.edu.do:1883";
         String usuario = "itt363-grupo1";
