@@ -25,13 +25,13 @@ public class ApiClient {
             }
 
             int codigoRespuesta = conn.getResponseCode();
-            System.out.println("✅ Datos enviados exitosamente al API.");
-            System.out.println("API → Código de respuesta: " + codigoRespuesta);
+            System.out.println("Datos enviados exitosamente al API.");
+            System.out.println("API Codigo de respuesta: " + codigoRespuesta);
 
             conn.disconnect();
 
         } catch (Exception e) {
-            System.out.println("❌ Error al enviar datos al API:");
+            System.out.println("Error al enviar datos al API:");
             e.printStackTrace();
         }
     }

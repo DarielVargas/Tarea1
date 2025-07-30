@@ -22,7 +22,23 @@ public class SuscriptorCallback implements MqttCallback {
 
     @Override
     public void connectionLost(Throwable cause) {
-        System.out.println("Conexión Perdida...");
+        System.out.println("Conexión perdida con el broker: " + cause.getMessage());
+        System.out.println("Intentando reconectar...");
+
+        new Thread(() -> {
+            boolean reconectado = false;
+
+            while (!reconectado) {
+                try {
+                    Thread.sleep(5000); // Espera 5 segundos
+                    Main.reconectarCliente(); // Método que debe estar en Main.java
+                    reconectado = true;
+                    System.out.println("Reconexión exitosa.");
+                } catch (Exception e) {
+                    System.out.println("Fallo al reconectar. Reintentando en 5 segundos...");
+                }
+            }
+        }).start();
     }
 
     @Override
@@ -42,16 +58,20 @@ public class SuscriptorCallback implements MqttCallback {
 
         System.out.println("JSON parseado → sensorId: " + datos.sensorId + ", tipo: " + datos.tipo + ", valor: " + datos.valor + ", fecha: " + datos.fecha);
 
-        // Convertir la fecha a Timestamp para MariaDB y a String para API
+        // Validar valor numérico
+        if (datos.valor == null || datos.valor.toString().equalsIgnoreCase("nan")) {
+            System.out.println("Valor inválido (NaN) para tipo: " + datos.tipo + ", se descarta el mensaje.");
+            return;
+        }
+
+        // Convertir la fecha
         Timestamp fechaSQL;
         String fechaApi;
         try {
             SimpleDateFormat formatoEntrada = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             Date parsedDate = formatoEntrada.parse(datos.fecha.trim());
             fechaSQL = new Timestamp(parsedDate.getTime());
-
-            SimpleDateFormat formatoApi = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            fechaApi = formatoApi.format(parsedDate);
+            fechaApi = formatoEntrada.format(parsedDate);
         } catch (Exception e) {
             System.out.println("Error al convertir fecha recibida: " + datos.fecha);
             e.printStackTrace();
@@ -113,7 +133,7 @@ public class SuscriptorCallback implements MqttCallback {
                 return;
         }
 
-        acumulado.setFecha(fechaApi); // ← Ya limpia para el API
+        acumulado.setFecha(fechaApi);
         acumulado.setEstacionId(estacionId);
 
         try (Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS)) {
@@ -138,8 +158,8 @@ public class SuscriptorCallback implements MqttCallback {
 
         // Enviar al API solo si está completo
         if (acumulado.estaCompleto()) {
-            String jsonApi = acumulado.toJsonApi();  // Solo temperatura y humedad por ahora
-            System.out.println("🌐 JSON a enviar al API: " + jsonApi);
+            String jsonApi = acumulado.toJsonApi();
+            System.out.println("JSON a enviar al API: " + jsonApi);
             ApiClient.enviarDatos(jsonApi);
             acumulado.reiniciar();
         }
@@ -162,9 +182,9 @@ public class SuscriptorCallback implements MqttCallback {
             stmt.setString(2, nombre);
             stmt.setString(3, ubicacion);
             stmt.executeUpdate();
-            System.out.println("✅ Inserción de estación realizada correctamente.");
+            System.out.println("Insercion de estacion realizada correctamente.");
         } catch (Exception e) {
-            System.out.println("Error al guardar estación: " + estacionId);
+            System.out.println("Error al guardar estacion: " + estacionId);
             e.printStackTrace();
         }
     }
